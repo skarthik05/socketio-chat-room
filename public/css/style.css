@@ -188,3 +188,17 @@ a {
 		display: none;
 	}
 }
+
+.typing-indicator {
+	padding: 10px;
+	margin: 10px 0;
+	background: rgba(0, 0, 0, 0.1);
+	border-radius: 5px;
+	font-style: italic;
+	color: #666;
+}
+
+.typing-indicator p {
+	margin: 0;
+	font-size: 0.9em;
+}

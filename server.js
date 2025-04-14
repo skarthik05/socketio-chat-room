@@ -48,6 +48,21 @@ io.on("connection", (socket) => {
     io.to(user.room).emit("message", formatMessage(user.username, msg));
   });
 
+  // Handle typing status
+  socket.on("typing", () => {
+    const user = getCurrentUser(socket.id);
+    if (user) {
+      socket.broadcast.to(user.room).emit("userTyping", user.username);
+    }
+  });
+
+  socket.on("stopTyping", () => {
+    const user = getCurrentUser(socket.id);
+    if (user) {
+      socket.broadcast.to(user.room).emit("userStoppedTyping", user.username);
+    }
+  });
+
   //Runs when client disconnects
   socket.on("disconnect", () => {
     let user = userLeave(socket.id);
