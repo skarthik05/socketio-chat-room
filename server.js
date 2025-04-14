@@ -13,6 +13,7 @@ const {
   getCurrentUser,
   userLeave,
   getRoomUsers,
+  updateUserStatus,
 } = require("./utils/users");
 const botName = "ChatBot";
 //Run when cline connects
@@ -60,6 +61,18 @@ io.on("connection", (socket) => {
     const user = getCurrentUser(socket.id);
     if (user) {
       socket.broadcast.to(user.room).emit("userStoppedTyping", user.username);
+    }
+  });
+
+  // Handle online status
+  socket.on("setOnlineStatus", (status) => {
+    const user = getCurrentUser(socket.id);
+    if (user) {
+      updateUserStatus(socket.id, status);
+      io.to(user.room).emit("roomUsers", {
+        room: user.room,
+        users: getRoomUsers(user.room),
+      });
     }
   });
 

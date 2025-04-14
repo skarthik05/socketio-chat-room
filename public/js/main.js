@@ -11,11 +11,23 @@ const { username, room } = Qs.parse(location.search, {
 const roomName = document.getElementById("room-name");
 const userLists = document.getElementById("users");
 const socket = io();
+
+// Set initial online status
+socket.emit("setOnlineStatus", "online");
+
+// Handle visibility change for online status
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    socket.emit("setOnlineStatus", "away");
+  } else {
+    socket.emit("setOnlineStatus", "online");
+  }
+});
+
 //Join Chatroom
 socket.emit("joinRoom", { username, room });
 
 //Get room and users
-
 socket.on("roomUsers", ({ room, users }) => {
   outputRoomName(room);
   outputUsers(users);
@@ -102,6 +114,56 @@ function outputRoomName(room) {
 //Add user to room
 function outputUsers(users) {
   userLists.innerHTML = `
-${users.map((user) => `<li>${user.username}</li>`).join("")}
+${users.map((user) => `
+  <li>
+    ${user.username}
+    <span class="status-indicator ${user.status}" data-tooltip="${user.status}" data-username="${user.username}" data-join-time="${user.joinTime}" data-last-active="${user.lastActive}"></span>
+  </li>
+`).join("")}
 `;
+
+  // Add tooltip event listeners
+  const statusIndicators = document.querySelectorAll('.status-indicator');
+  statusIndicators.forEach(indicator => {
+    indicator.addEventListener('mouseenter', showTooltip);
+    indicator.addEventListener('mouseleave', hideTooltip);
+  });
+}
+
+// Show tooltip
+function showTooltip(e) {
+  const status = e.target.getAttribute('data-tooltip');
+  const username = e.target.getAttribute('data-username');
+  const joinTime = new Date(e.target.getAttribute('data-join-time'));
+  const lastActive = new Date(e.target.getAttribute('data-last-active'));
+  
+  const tooltip = document.createElement('div');
+  tooltip.className = 'tooltip';
+  
+  // Format the join time and last active time
+  const joinTimeStr = joinTime.toLocaleTimeString();
+  const lastActiveStr = lastActive.toLocaleTimeString();
+  
+  tooltip.innerHTML = `
+    <div class="tooltip-header">${username}</div>
+    <div class="tooltip-content">
+      <div>Status: <span class="status-${status}">${status}</span></div>
+      <div>Joined: ${joinTimeStr}</div>
+      <div>Last active: ${lastActiveStr}</div>
+    </div>
+  `;
+  
+  document.body.appendChild(tooltip);
+  
+  const rect = e.target.getBoundingClientRect();
+  tooltip.style.top = `${rect.top - tooltip.offsetHeight - 5}px`;
+  tooltip.style.left = `${rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2)}px`;
+}
+
+// Hide tooltip
+function hideTooltip() {
+  const tooltip = document.querySelector('.tooltip');
+  if (tooltip) {
+    tooltip.remove();
+  }
 }
